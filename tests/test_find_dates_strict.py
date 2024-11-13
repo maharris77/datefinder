@@ -11,7 +11,12 @@ today = datetime.today()
 
 
 @pytest.mark.parametrize('input_text, expected_date', [
-
+    ((
+        "Meeting Link: https://teams.microsoft.com/l/meetup-join"
+        "/19%3ameeting_YjI2OWU4OTUtNWIwNS00OTU1LTk3YzQtZTg1ZTA2YTk1YzEx%40thread.v2/0?"
+        "Conference Call (Group Meet) on Monday, 11th November, 2024 at 09:30 A.M. (IST) to discuss"),
+        datetime(2024, 11, 11, 9, 30)
+    ),
     ('June 2018', []),
     ('09/06/18',  datetime(2018, 9, 6)),
     ('09/06/2018', datetime(2018, 9, 6)),

@@ -24,7 +24,7 @@ def is_positive_proper_fraction(s):
         a = str(f) == s.strip(STRIP_CHARS)  # Reduced
         b = 0 < f.numerator < f.denominator  # In open unit interval
         return a and b
-    except ValueError:
+    except (ValueError, ZeroDivisionError):
         return False
 
 class DateFinder(object):

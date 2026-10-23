@@ -47,3 +47,21 @@ def test_extract_date_strings_with_strict_option(date_string, expected_match_dat
     matches = list(dt.extract_date_strings(date_string, strict=True))
     expected = [expected_match_date_string] if expected_match_date_string else []
     assert [match[0] for match in matches] == expected
+
+
+@pytest.mark.parametrize('timezone', ['eastern', 'Eastern', 'EASTERN'])
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason='Existing tokenizer prefix collision: EAST precedes eastern without a boundary',
+)
+def test_extract_complete_eastern_timezone_name(timezone):
+    # Exercise actual extraction, not a manually supplied helper capture.
+    finder = datefinder.DateFinder()
+    matches = list(finder.extract_date_strings('July 22, 2014 2 p.m. ' + timezone))
+    captured_timezones = [
+        captured
+        for _, _, captures in matches
+        for captured in captures.get('timezones', [])
+    ]
+    assert captured_timezones == [timezone]

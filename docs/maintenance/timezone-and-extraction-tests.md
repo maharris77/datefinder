@@ -22,3 +22,11 @@ The full pytest suite has **not run**. Both `regex` and `pytest` are absent in t
 `.github/workflows/python-package.yml` filters pushes and pull requests to `master`, whereas the current default branch is `main`. A separate change should target `main` after reviewing existing test failures. The workflow is deliberately unchanged in this patch.
 
 The fraction division-by-zero change is already proposed in [PR #1](https://github.com/maharris77/datefinder/pull/1) and is not duplicated here.
+
+## Known tokenizer prefix collision
+
+The helper normalization is not an end-to-end fix for named timezones. In `constants.py`, `ALL_TIMEZONES_PATTERN` places the abbreviation alternation before the named aliases; `EAST` precedes `eastern`, and the timezone alternatives have no ending boundary. Case-insensitive matching can therefore capture `east`/`EAST` rather than the full `eastern`/`EASTERN` token before `_pop_tz_string` runs. This is pre-existing and unchanged by this PR.
+
+A separate standard-library regex probe of the exact timezone alternation confirms the prefix match for lower/title/uppercase eastern. This probe is not a run of the package tokenizer. Three strict expected-failure regression cases exercise actual `extract_date_strings` and require the full original timezone capture. They are intentionally limited to `AssertionError` so unrelated errors are not hidden, and an unexpected pass will require removing the expected-failure marker. These new integration cases remain unrun here because `regex` and `pytest` are unavailable.
+
+A separate tokenizer fix could put named aliases ahead of abbreviations, which narrowly addresses EAST/eastern, but should evaluate other prefix collisions and word-boundary compatibility before choosing a broader change. No alternation, boundary, or tokenizer semantics are changed in this PR.

@@ -19,14 +19,14 @@ logger = logging.getLogger(__name__)
 ])
 def test_extract_date_strings(date_string, expected_match_date_string):
     dt = datefinder.DateFinder()
-    for actual_date_string, indexes, captures in dt.extract_date_strings(date_string):
+    matches = list(dt.extract_date_strings(date_string))
+    assert [match[0] for match in matches] == [expected_match_date_string]
+    for actual_date_string, indexes, captures in matches:
         logger.debug("actual={}  expected={}".format(actual_date_string, expected_match_date_string))
         assert actual_date_string == expected_match_date_string
         assert len(captures.get('timezones',[])) > 0, "timezone expected in result"
 
-# TODO: 'May 20th 2015 is nowhere near the other date' was not recognized as
-# a date string: this string produced no result, but there was no error
-# because for-loop didn't make this iteration (no result in dt.extract_date_strings)
+# Compare complete result lists so missing positive matches cannot pass silently.
 
 @pytest.mark.parametrize('date_string, expected_match_date_string', [
     ['the Friday after next Tuesday the 20th', ''], # no matches
@@ -44,6 +44,6 @@ def test_extract_date_strings_with_strict_option(date_string, expected_match_dat
     :return:
     """
     dt = datefinder.DateFinder()
-    for actual_date_string, indexes, captures in dt.extract_date_strings(date_string,strict=True):
-        logger.debug("actual={}  expected={}".format(actual_date_string, expected_match_date_string))
-        assert actual_date_string == expected_match_date_string
+    matches = list(dt.extract_date_strings(date_string, strict=True))
+    expected = [expected_match_date_string] if expected_match_date_string else []
+    assert [match[0] for match in matches] == expected

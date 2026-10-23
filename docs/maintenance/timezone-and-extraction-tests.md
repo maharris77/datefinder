@@ -38,3 +38,15 @@ The original `ALL_TIMEZONES_PATTERN` placed abbreviation alternatives before nam
 Twelve ordinary regression cases now exercise actual `extract_date_strings` for lower/title/uppercase eastern, pacific, mountain, and central. They require both the full source match and complete timezone capture. A separate regression compares old and new matching for every existing abbreviation in three capitalization forms: 1,161 comparisons passed. The original three strict expected-failure markers were removed because their cases now pass.
 
 This is a token-recognition and helper-lookup fix, not a DST or timezone-database fix. Abbreviations such as PST/CST can still fail to resolve in the installed timezone database; successful token extraction does not guarantee a timezone-aware datetime. Other abbreviation-to-abbreviation prefix collisions and word-boundary behavior are deliberately outside this change.
+
+## Diagnostic input correction follow-up
+
+The final test-only follow-up changes `TIMEZONES_PATTERN.split(r'|\s')` to `TIMEZONES_PATTERN.split('|')`. The diagnostic has no active resolution assertion: it logs supported and unsupported names, and its universal-resolution assertion was already commented out. Keeping the test retains exception-smoke coverage while fixing malformed inputs, rather than deleting coverage, suppressing exceptions, or requiring every abbreviation to resolve.
+
+Before correction the input list had five entries: four named aliases and one entire alternation. After correction it contains 391 individual entries (386 unique); in this environment 12 resolve and 379 do not. These counts describe the installed timezone database, not a correctness guarantee or fixed test expectation.
+
+Verification of the delimiter-only follow-up:
+- Base main plus the correction: **53 passed, 1 failed**, leaving only the known stale yearless fixture.
+- PR alias-first code plus the correction: **83 passed, no failures or xfails**.
+
+No assertions or exception handling were weakened. The production library, CI triggers, package versions, and existing PR #1 are unchanged by this follow-up. This is a passing suite for the single Python/dependency environment above, not a supported-version matrix or proof of DST/database correctness.

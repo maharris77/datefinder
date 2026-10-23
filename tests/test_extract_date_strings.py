@@ -49,19 +49,35 @@ def test_extract_date_strings_with_strict_option(date_string, expected_match_dat
     assert [match[0] for match in matches] == expected
 
 
-@pytest.mark.parametrize('timezone', ['eastern', 'Eastern', 'EASTERN'])
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason='Existing tokenizer prefix collision: EAST precedes eastern without a boundary',
-)
-def test_extract_complete_eastern_timezone_name(timezone):
-    # Exercise actual extraction, not a manually supplied helper capture.
+@pytest.mark.parametrize('timezone', [
+    'eastern', 'Eastern', 'EASTERN',
+    'pacific', 'Pacific', 'PACIFIC',
+    'mountain', 'Mountain', 'MOUNTAIN',
+    'central', 'Central', 'CENTRAL',
+])
+def test_extract_complete_named_timezone(timezone):
     finder = datefinder.DateFinder()
-    matches = list(finder.extract_date_strings('July 22, 2014 2 p.m. ' + timezone))
+    source = 'July 22, 2014 2 p.m. ' + timezone
+    matches = list(finder.extract_date_strings(source))
+    assert [match[0] for match in matches] == [source]
     captured_timezones = [
         captured
         for _, _, captures in matches
         for captured in captures.get('timezones', [])
     ]
     assert captured_timezones == [timezone]
+
+
+def test_named_alias_precedence_preserves_abbreviation_matching():
+    import regex
+    from datefinder.constants import (
+        ALL_TIMEZONES_PATTERN, NA_TIMEZONES_PATTERN, TIMEZONES_PATTERN,
+    )
+
+    old_pattern = regex.compile(
+        TIMEZONES_PATTERN + '|' + NA_TIMEZONES_PATTERN, regex.IGNORECASE
+    )
+    current_pattern = regex.compile(ALL_TIMEZONES_PATTERN, regex.IGNORECASE)
+    for abbreviation in TIMEZONES_PATTERN.split('|'):
+        for variant in (abbreviation.lower(), abbreviation.title(), abbreviation.upper()):
+            assert current_pattern.match(variant).group() == old_pattern.match(variant).group()

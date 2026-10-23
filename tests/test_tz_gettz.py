@@ -16,7 +16,7 @@ def test_tz_gettz_for_all_patterns():
     """
     bad_tz_strings = []
     good_tz_strings = []
-    test_tz_strings = NA_TIMEZONES_PATTERN.split('|') + TIMEZONES_PATTERN.split(r'|\s')
+    test_tz_strings = NA_TIMEZONES_PATTERN.split('|') + TIMEZONES_PATTERN.split('|')
     for tz_string in test_tz_strings:
         if tz_string in TIMEZONE_REPLACEMENTS.keys():
             tz_string = TIMEZONE_REPLACEMENTS[tz_string]

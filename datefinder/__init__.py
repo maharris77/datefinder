@@ -102,7 +102,7 @@ class DateFinder(object):
             tz_string = list_of_timezones.pop()
             # make sure it's not a timezone we
             # want replaced with better abbreviation
-            return TIMEZONE_REPLACEMENTS.get(tz_string, tz_string)
+            return TIMEZONE_REPLACEMENTS.get(tz_string.lower(), tz_string)
         except IndexError:
             return ""
 

@@ -19,14 +19,14 @@ logger = logging.getLogger(__name__)
 ])
 def test_extract_date_strings(date_string, expected_match_date_string):
     dt = datefinder.DateFinder()
-    for actual_date_string, indexes, captures in dt.extract_date_strings(date_string):
+    matches = list(dt.extract_date_strings(date_string))
+    assert [match[0] for match in matches] == [expected_match_date_string]
+    for actual_date_string, indexes, captures in matches:
         logger.debug("actual={}  expected={}".format(actual_date_string, expected_match_date_string))
         assert actual_date_string == expected_match_date_string
         assert len(captures.get('timezones',[])) > 0, "timezone expected in result"
 
-# TODO: 'May 20th 2015 is nowhere near the other date' was not recognized as
-# a date string: this string produced no result, but there was no error
-# because for-loop didn't make this iteration (no result in dt.extract_date_strings)
+# Compare complete result lists so missing positive matches cannot pass silently.
 
 @pytest.mark.parametrize('date_string, expected_match_date_string', [
     ['the Friday after next Tuesday the 20th', ''], # no matches
@@ -44,6 +44,40 @@ def test_extract_date_strings_with_strict_option(date_string, expected_match_dat
     :return:
     """
     dt = datefinder.DateFinder()
-    for actual_date_string, indexes, captures in dt.extract_date_strings(date_string,strict=True):
-        logger.debug("actual={}  expected={}".format(actual_date_string, expected_match_date_string))
-        assert actual_date_string == expected_match_date_string
+    matches = list(dt.extract_date_strings(date_string, strict=True))
+    expected = [expected_match_date_string] if expected_match_date_string else []
+    assert [match[0] for match in matches] == expected
+
+
+@pytest.mark.parametrize('timezone', [
+    'eastern', 'Eastern', 'EASTERN',
+    'pacific', 'Pacific', 'PACIFIC',
+    'mountain', 'Mountain', 'MOUNTAIN',
+    'central', 'Central', 'CENTRAL',
+])
+def test_extract_complete_named_timezone(timezone):
+    finder = datefinder.DateFinder()
+    source = 'July 22, 2014 2 p.m. ' + timezone
+    matches = list(finder.extract_date_strings(source))
+    assert [match[0] for match in matches] == [source]
+    captured_timezones = [
+        captured
+        for _, _, captures in matches
+        for captured in captures.get('timezones', [])
+    ]
+    assert captured_timezones == [timezone]
+
+
+def test_named_alias_precedence_preserves_abbreviation_matching():
+    import regex
+    from datefinder.constants import (
+        ALL_TIMEZONES_PATTERN, NA_TIMEZONES_PATTERN, TIMEZONES_PATTERN,
+    )
+
+    old_pattern = regex.compile(
+        TIMEZONES_PATTERN + '|' + NA_TIMEZONES_PATTERN, regex.IGNORECASE
+    )
+    current_pattern = regex.compile(ALL_TIMEZONES_PATTERN, regex.IGNORECASE)
+    for abbreviation in TIMEZONES_PATTERN.split('|'):
+        for variant in (abbreviation.lower(), abbreviation.title(), abbreviation.upper()):
+            assert current_pattern.match(variant).group() == old_pattern.match(variant).group()
